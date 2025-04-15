@@ -64,19 +64,19 @@ app.post("/login", async (req, res) => {
 
   try {
     const user = await db.get("SELECT * FROM users WHERE email = ?", [email]);
-    if (!user) return res.status(404).send({ msg: "User not found." });
+    if (!user) return res.status(404).send({ message: "User not found." });
 
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword)
-      return res.status(401).send({ msg: "Invalid password." });
+      return res.status(401).send({ message: "Invalid password." });
 
-    const token = jwt.sign(
+    const jwtToken = jwt.sign(
       { id: user.id, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: "30d" }
     );
 
-    res.status(200).send({ token, role: user.role, name: user.name });
+    res.status(200).send({ jwtToken, role: user.role, name: user.name });
   } catch (error) {
     res.status(500).send({ message: "Internal Server Error" });
     console.log(error);
