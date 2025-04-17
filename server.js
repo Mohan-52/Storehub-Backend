@@ -140,11 +140,47 @@ app.get("/dashboard", authenticateToken, authorizeAdmin, async (req, res) => {
     const userCount = await db.get("SELECT COUNT(*) AS count FROM users");
     const storeCount = await db.get("SELECT COUNT(*) AS count FROM stores");
     const ratingCount = await db.get("SELECT COUNT(*) AS count FROM ratings");
+    const highestRated = await db.get(`
+     SELECT 
+      s.name, 
+      AVG(r.rating) AS averageRating, 
+      COUNT(r.rating) AS ratingCount
+     FROM 
+      stores s
+     JOIN 
+      ratings r ON s.id = r.store_id
+     GROUP BY 
+      s.id, s.name
+     ORDER BY 
+      averageRating DESC,
+      ratingCount DESC
+
+
+    LIMIT 1;
+    `);
+
+    const topReviewedStores = await db.all(`
+      SELECT 
+        s.name,
+        COUNT(r.rating) AS totalReviews,
+        ROUND(AVG(r.rating), 2) AS averageRating
+      FROM 
+        stores s
+      JOIN 
+        ratings r ON s.id = r.store_id
+      GROUP BY 
+        s.id, s.name
+      ORDER BY 
+        totalReviews DESC
+      LIMIT 5;
+    `);
 
     res.status(200).send({
       totalUsers: userCount.count,
       totalStores: storeCount.count,
       totalRatings: ratingCount.count,
+      highestRated,
+      topReviewedStores,
     });
   } catch (error) {
     res.status(500).send({ message: "Internal Server Error" });
